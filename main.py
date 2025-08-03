@@ -58,6 +58,7 @@ def start_menu():
 def game_over_menu():
     font = pygame.font.Font(None, 50)
     game_over_text = font.render("GAME OVER", True, RED)
+    score_text = font.render("SCORE: " + str(score), True, WHITE)
     continue_text = font.render("Continue?", True, WHITE)
     yes_text = font.render("YES", True, GREEN)
     no_text = font.render("NO", True, RED)
@@ -67,7 +68,8 @@ def game_over_menu():
     while True:
         screen.fill(BLACK)
         screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 8))
-        screen.blit(continue_text, (WIDTH // 2 - continue_text.get_width() // 2, HEIGHT // 2 - continue_text.get_height() - 20))
+        screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 4))
+        screen.blit(continue_text, (WIDTH // 2 - continue_text.get_width() // 2, HEIGHT // 2 + 50))
         screen.blit(yes_text, (WIDTH // 2 - yes_text.get_width() // 2 - 50, 300))
         screen.blit(no_text, (WIDTH // 2 - no_text.get_width() // 2 + 50, 300))
         pygame.display.flip()
@@ -128,7 +130,7 @@ while playing:
 
         # Skip movement and game logic if paused
         if paused:
-            
+
             # Draw pause text
             font = pygame.font.Font(None, 60)
             pause_text = font.render("PAUSED", True, BLACK)
