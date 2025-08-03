@@ -9,7 +9,7 @@ pygame.init()
 WIDTH, HEIGHT = 600, 400
 BLOCK_SIZE = 20
 
-# Colors (R, G, B)
+# Colors 
 WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 BLACK = (0, 0, 0)
@@ -95,8 +95,11 @@ def spawn_food(snake):
         if (food_x, food_y) not in snake:
             return (food_x, food_y)
 
-# Game loop
+
+# Start up game and select difficulty
 FPS = start_menu()
+
+# Play Snake for as long as player likes on selected difficulty
 playing = True
 while playing:
 
@@ -105,9 +108,11 @@ while playing:
     direction = (BLOCK_SIZE, 0)
     food_position = spawn_food(snake)
     score = 0
-    pygame.display.set_caption("Snake Game   Score: " + str(score))
+    pygame.display.set_caption("Snake Game          Press SPACE to PAUSE          Score: " + str(score))
     paused = False
     running = True
+
+    # Run each game
     while running:
         clock.tick(FPS)
 
@@ -138,7 +143,7 @@ while playing:
             pygame.display.flip()
             continue  # Skip rest of loop until unpaused
 
-        # Calculate new head
+        # Calculate new snake head after movement
         head_x, head_y = snake[0]
         new_head = (head_x + direction[0], head_y + direction[1])
 
@@ -158,11 +163,11 @@ while playing:
         if new_head == food_position:
             food_position = spawn_food(snake)
             score += 1
-            pygame.display.set_caption("Snake Game   Score: " + str(score))
+            pygame.display.set_caption("Snake Game          Press SPACE to PAUSE          Score: " + str(score))
         else:
             snake.pop()
 
-        # Drawing
+        # Background
         screen.fill(WHITE)
 
         # Draw snake
