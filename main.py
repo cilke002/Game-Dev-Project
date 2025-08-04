@@ -15,6 +15,7 @@ GREEN = (0, 200, 0)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+YELLOW = (0, 255, 0)
 
 # Screen display 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -60,19 +61,21 @@ def game_over_menu():
     font = pygame.font.Font(None, 50)
     game_over_text = font.render("GAME OVER", True, RED)
     score_text = font.render("SCORE: " + str(score), True, WHITE)
+    high_score_text = font.render("HIGH SCORE: " + str(high_score), True, YELLOW)
     continue_text = font.render("Continue?", True, WHITE)
     yes_text = font.render("YES", True, GREEN)
     no_text = font.render("NO", True, RED)
-    yes_box = yes_text.get_rect(center = (WIDTH // 2 - 50, 300 + yes_text.get_height() // 2))
-    no_box = no_text.get_rect(center = (WIDTH // 2 + 50, 300 + no_text.get_height() // 2))
+    yes_box = yes_text.get_rect(center = (WIDTH // 2 - 50, 350 + yes_text.get_height() // 2))
+    no_box = no_text.get_rect(center = (WIDTH // 2 + 50, 350 + no_text.get_height() // 2))
 
     while True:
         screen.fill(BLACK)
-        screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 8))
-        screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 4))
-        screen.blit(continue_text, (WIDTH // 2 - continue_text.get_width() // 2, HEIGHT // 2 + 50))
-        screen.blit(yes_text, (WIDTH // 2 - yes_text.get_width() // 2 - 50, 300))
-        screen.blit(no_text, (WIDTH // 2 - no_text.get_width() // 2 + 50, 300))
+        screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, 25))
+        screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, 75))
+        screen.blit(high_score_text, (WIDTH // 2 - high_score_text.get_width() // 2, HEIGHT // 2 - high_score_text.get_height() // 2))
+        screen.blit(continue_text, (WIDTH // 2 - continue_text.get_width() // 2, HEIGHT // 2 + 100))
+        screen.blit(yes_text, (WIDTH // 2 - yes_text.get_width() // 2 - 50, 350))
+        screen.blit(no_text, (WIDTH // 2 - no_text.get_width() // 2 + 50, 350))
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -108,6 +111,7 @@ else:
 
 # Play Snake for as long as player likes on selected difficulty
 playing = True
+high_score = 0
 while playing:
 
     # Reset game state at the start of each new game
@@ -187,6 +191,8 @@ while playing:
         pygame.display.flip()
 
     # Game over screen, continue? (y/n)
+    if score > high_score:
+        high_score = score
     playing = game_over_menu()
 
 # Quit
