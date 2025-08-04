@@ -14,6 +14,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
+BLUE = (0, 0, 255)
 
 # Screen display 
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -27,8 +28,8 @@ def start_menu():
     title_text = font.render("SNAKE GAME", True, GREEN)
     select_text = font.render("Select Difficulty", True, WHITE)
     easy_text = font.render("EASY", True, GREEN)
-    medium_text = font.render("MEDIUM", True, GREEN)
-    hard_text = font.render("HARD", True, GREEN)
+    medium_text = font.render("MEDIUM", True, BLUE)
+    hard_text = font.render("HARD", True, RED)
     easy_mode = easy_text.get_rect(center=(WIDTH // 2, 200 + easy_text.get_height() // 2))
     medium_mode = medium_text.get_rect(center=(WIDTH // 2, 250 + medium_text.get_height() // 2))
     hard_mode = hard_text.get_rect(center=(WIDTH // 2, 300 + hard_text.get_height() // 2))
@@ -48,11 +49,11 @@ def start_menu():
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if easy_mode.collidepoint(event.pos):
-                    return 10
+                    return "EASY"
                 elif medium_mode.collidepoint(event.pos):
-                    return 15
+                    return "MEDIUM"
                 elif hard_mode.collidepoint(event.pos):
-                    return 30
+                    return "HARD"
                 
 # Game over menu                
 def game_over_menu():
@@ -97,7 +98,13 @@ def spawn_food(snake):
 
 
 # Start up game and select difficulty
-FPS = start_menu()
+difficulty = start_menu()
+if difficulty == "EASY":
+    FPS = 10
+elif difficulty == "MEDIUM":
+    FPS = 15
+else:
+    FPS = 30
 
 # Play Snake for as long as player likes on selected difficulty
 playing = True
@@ -108,7 +115,7 @@ while playing:
     direction = (BLOCK_SIZE, 0)
     food_position = spawn_food(snake)
     score = 0
-    pygame.display.set_caption("Snake Game          Press SPACE to PAUSE          Score: " + str(score))
+    pygame.display.set_caption("Snake Game          Difficulty: " + difficulty + "          Press SPACE to PAUSE          Score: " + str(score))
     paused = False
     running = True
 
@@ -139,7 +146,7 @@ while playing:
             # Draw pause text
             font = pygame.font.Font(None, 60)
             pause_text = font.render("PAUSED", True, BLACK)
-            screen.blit(pause_text, (WIDTH//2 - pause_text.get_width()//2, HEIGHT//2))
+            screen.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2))
             pygame.display.flip()
             continue  # Skip rest of loop until unpaused
 
@@ -163,7 +170,7 @@ while playing:
         if new_head == food_position:
             food_position = spawn_food(snake)
             score += 1
-            pygame.display.set_caption("Snake Game          Press SPACE to PAUSE          Score: " + str(score))
+            pygame.display.set_caption("Snake Game          Difficulty: " + difficulty + "          Press SPACE to PAUSE          Score: " + str(score))
         else:
             snake.pop()
 
