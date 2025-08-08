@@ -210,6 +210,7 @@ def run_game(difficulty, high_score):
 
 # MAIN LOOP
 def main():
+    """Main driver function."""
     difficulty = start_menu()
     high_score = 0
     playing = True
