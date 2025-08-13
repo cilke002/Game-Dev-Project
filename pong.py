@@ -12,6 +12,9 @@ BLOCK_SIZE = 30
 LINE_WIDTH = 4
 FPS = 30
 BALL_SPEED = BLOCK_SIZE // 2
+EASY_CPU_REACTION_TIME = WIDTH - 150
+MEDIUM_CPU_REACTION_TIME = WIDTH - 175
+HARD_CPU_REACTION_TIME = WIDTH // 2
 
 # Colors 
 WHITE = (255, 255, 255)
@@ -28,7 +31,7 @@ clock = pygame.time.Clock()
 
 # MENUS
 def start_menu():
-    """Displays the start menu and returns selected difficulty."""
+    """Displays the start menu and returns selected mode."""
     font = pygame.font.Font(None, 50)
     title_text = font.render("PONG", True, WHITE)
     select_text = font.render("Select Mode", True, WHITE)
@@ -57,7 +60,7 @@ def start_menu():
                     return "2 Player"
 
 def one_player_menu():
-    """TODO"""
+    """Displays menu for singleplayer mode, and returns selected CPU difficulty"""
     font = pygame.font.Font(None, 50)
     select_text = font.render("Select Difficulty", True, WHITE)
     easy_text = font.render("EASY", True, WHITE)
@@ -68,7 +71,7 @@ def one_player_menu():
     easy_mode = easy_text.get_rect(center=(WIDTH // 2, 400))
     medium_mode = medium_text.get_rect(center=(WIDTH // 2, 450))
     hard_mode = hard_text.get_rect(center=(WIDTH // 2, 500))
-    back_box = back_text.get_rect(center=(WIDTH // 4, 600))
+    back_box = back_text.get_rect(center=(WIDTH // 8, 675))
 
     while True:
         screen.fill(BLACK)
@@ -137,16 +140,39 @@ def move_paddle(paddle, direction):
     """Move one player's paddle in desired direction."""
     if direction == 0:
         return
+    elif direction > 0:
+        front = 3
+    else:
+        front = 0
 
-    head_x, head_y = paddle[0]
-    new_y = head_y + direction
+    head_x, head_y = paddle[front]
+    new_y = head_y + direction 
 
     if new_y < 0 or new_y > HEIGHT - 1:
         return  # Don’t move if out of bounds
 
     new_head = (head_x, new_y)
-    paddle.insert(0, new_head)
-    paddle.pop()
+
+    if direction < 0:
+        paddle.insert(0, new_head)
+        paddle.pop()
+    else:
+        paddle.insert(4, new_head)
+        paddle.pop(0)
+
+def cpu_move_paddle(paddle, paddle_direction, ball, ball_direction, reaction_time, ball_dest):
+    """Move CPU paddle to hit ball once it's close enough for CPU to notice"""
+    new_paddle_direction = paddle_direction
+    paddle_y = list()
+    for segment in paddle:
+        paddle_y.append(segment[1])
+    if ball_dest not in paddle_y and ball[0] > reaction_time:
+        if ball_dest < paddle[0][1] and paddle_direction > 0:
+            new_paddle_direction = paddle_direction * -1
+        elif ball_dest > paddle[3][1] and paddle_direction < 0:
+            new_paddle_direction = paddle_direction * -1
+        if ball_direction[0] > 0:
+            move_paddle(paddle, new_paddle_direction)
 
 def check_collision(ball, paddle):
     """Check if ball hits paddle."""
@@ -168,6 +194,22 @@ def calc_trajectory(ball, paddles, ball_direction):
 
     return ball_direction
 
+def calc_ball_dest(ball, ball_direction):
+    """Calculate where the ball will end up based on its trajectory at the center line."""
+    if ball_direction[1] < 0:
+        ball_y = ball[1] - (8 * BLOCK_SIZE)
+        ball_y *= -1
+    else:
+        ball_y = ball[1] + (8 * BLOCK_SIZE)
+
+    ball_dest = (((WIDTH // 2) - (2 * BLOCK_SIZE)) // BLOCK_SIZE) * abs(ball_direction[1]) + ball_y
+    if ball_dest > HEIGHT:
+        ball_dest = ball_dest - ((ball_dest - HEIGHT) * 2)
+    elif ball_dest < 0:
+        ball_dest = ball_dest * -1
+
+    return ball_dest
+
 def move_ball(ball, ball_direction):
     """Move the ball and return its new position."""
     ball_x, ball_y = ball
@@ -182,11 +224,11 @@ def run_game(cpu):
     paddles = [p1, p2]
     d1 = 0
     d2 = 0
-    directions = [d1, d2]
     paused = False
     running = True
     ball = spawn_ball()
     ball_direction = (-BALL_SPEED, BALL_SPEED)
+    ball_dest = 0
     score = [0, 0]
     draw_game(paddles, ball, score)
     time.sleep(0.5)
@@ -225,15 +267,32 @@ def run_game(cpu):
             pygame.display.flip()
             continue
 
+        # CPU movement
+        if cpu == "EASY":
+            d2 = BLOCK_SIZE
+            reaction_time = EASY_CPU_REACTION_TIME
+        elif cpu == "MEDIUM":
+            d2 = BLOCK_SIZE
+            reaction_time = MEDIUM_CPU_REACTION_TIME
+        elif cpu == "HARD":
+            d2 = BLOCK_SIZE
+            reaction_time = HARD_CPU_REACTION_TIME
+
         # Player movement
         new_ball_direction = calc_trajectory(ball, paddles, ball_direction)
         ball = move_ball(ball, new_ball_direction)
         move_paddle(p1, d1)
-        move_paddle(p2, d2)
 
-        # CPU movement
+        if ball[0] == WIDTH // 2 and ball_direction[0] > 0:
+            ball_dest = calc_ball_dest(ball, ball_direction)
+
+        # pygame.draw.rect(screen, RED, (WIDTH - BLOCK_SIZE, ball_dest, BLOCK_SIZE, BLOCK_SIZE))
+        # pygame.display.flip()
         
-
+        if cpu == "None":
+            move_paddle(p2, d2)
+        else:
+            cpu_move_paddle(p2, d2, ball, new_ball_direction, reaction_time, ball_dest)
 
         # Increment score and spawn new ball
         if ball[0] > WIDTH:
@@ -264,6 +323,7 @@ def draw_game(paddles, ball, score):
             pygame.draw.rect(screen, WHITE, (*segment, BLOCK_SIZE, BLOCK_SIZE))
 
     pygame.draw.rect(screen, WHITE, (*ball, BLOCK_SIZE, BLOCK_SIZE))
+
     # Draw dashed center line
     dash_height = 10
     gap = 10
@@ -272,6 +332,7 @@ def draw_game(paddles, ball, score):
     for y in range(0, HEIGHT, dash_height + gap):
         pygame.draw.rect(screen, WHITE, (x, y, LINE_WIDTH, dash_height))
 
+    # Draw score
     font = pygame.font.Font(None, 100)
     score_1 = font.render(f"{score[0]}", True, WHITE)
     score_2 = font.render(f"{score[1]}", True, WHITE)
@@ -289,20 +350,18 @@ def main():
             cpu = one_player_menu()
             if cpu == "BACK":
                 continue
-            break
         elif mode == "2 Player":
             cpu = "None"
-            break  
 
-    playing = True
-    while playing:
-        score = run_game(cpu)
-        if score[0] > score[1]:
-            winner = 1
-        else:
-            winner = 2
-        playing = end_game(winner, score)
-    
+        playing = True
+        while playing:
+            score = run_game(cpu)
+            if score[0] > score[1]:
+                winner = 1
+            else:
+                winner = 2
+            playing = end_game(winner, score)
+
 if __name__ == "__main__":
     main()
     
