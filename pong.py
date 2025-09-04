@@ -2,36 +2,30 @@ import pygame
 import sys
 import random
 import time
+import math
 
-# Initialize pygame
-pygame.init()
-
-# Game settings
+# ---- SETTINGS ----
 WIDTH, HEIGHT = 1020, 750
 BLOCK_SIZE = 30
 LINE_WIDTH = 4
-FPS = 30
-BALL_SPEED = BLOCK_SIZE // 2
-EASY_CPU_REACTION_TIME = WIDTH - 150
-MEDIUM_CPU_REACTION_TIME = WIDTH - 175
-HARD_CPU_REACTION_TIME = WIDTH // 2
+FPS = 60
+BALL_SPEED = 8
 
-# Colors 
+EASY_CPU_SPEED = 7
+MEDIUM_CPU_SPEED = 11
+HARD_CPU_SPEED = 14
+
+CPU_REACTION_TIME = WIDTH - 400
+
 WHITE = (255, 255, 255)
-GREEN = (0, 200, 0)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-LIGHT_BLUE = (0, 255, 255)
-LIGHT_GREEN = (0, 255, 0)
 
-# Screen and clock
+pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
-# MENUS
+# ---- MENUS ----
 def start_menu():
-    """Displays the start menu and returns selected mode."""
     font = pygame.font.Font(None, 50)
     title_text = font.render("PONG", True, WHITE)
     select_text = font.render("Select Mode", True, WHITE)
@@ -51,16 +45,14 @@ def start_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if one_player.collidepoint(event.pos):
+                if one_player.collidepoint(event.pos): 
                     return "1 Player"
-                elif two_player.collidepoint(event.pos):
+                elif two_player.collidepoint(event.pos): 
                     return "2 Player"
 
 def one_player_menu():
-    """Displays menu for singleplayer mode, and returns selected CPU difficulty"""
     font = pygame.font.Font(None, 50)
     select_text = font.render("Select Difficulty", True, WHITE)
     easy_text = font.render("EASY", True, WHITE)
@@ -84,20 +76,18 @@ def one_player_menu():
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if easy_mode.collidepoint(event.pos):
+                if easy_mode.collidepoint(event.pos): 
                     return "EASY"
-                elif medium_mode.collidepoint(event.pos):
+                elif medium_mode.collidepoint(event.pos): 
                     return "MEDIUM"
-                elif hard_mode.collidepoint(event.pos):
+                elif hard_mode.collidepoint(event.pos): 
                     return "HARD"
-                elif back_box.collidepoint(event.pos):
+                elif back_box.collidepoint(event.pos): 
                     return "BACK"
 
 def end_game(winner, score):
-    """Displays the game over screen and returns True to play again, False to quit."""
     font = pygame.font.Font(None, 50)
     winner_text = font.render(f"PLAYER {winner} WINS", True, WHITE)
     score_text = font.render(f"{score[0]} - {score[1]}", True, WHITE)
@@ -119,249 +109,201 @@ def end_game(winner, score):
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if yes_box.collidepoint(event.pos):
+                if yes_box.collidepoint(event.pos): 
                     return True
-                elif no_box.collidepoint(event.pos):
+                elif no_box.collidepoint(event.pos): 
                     return False
 
-# GAME LOGIC
-def spawn_ball():
-    """Spawn ball on random location along center line."""
-    max_y = HEIGHT // BLOCK_SIZE
-    while True:
-        ball_x = WIDTH // 2 - 15
-        ball_y = random.randint(0, max_y - 1) * BLOCK_SIZE
-        return (ball_x, ball_y)
+# ---- CLASSES ----
+class Paddle:
+    def __init__(self, x, y):
+        self.rect = pygame.Rect(x, y, BLOCK_SIZE, BLOCK_SIZE * 4)
+        self.speed = BLOCK_SIZE // 2
+        self.direction = 0
 
-def move_paddle(paddle, direction):
-    """Move one player's paddle in desired direction."""
-    if direction == 0:
-        return
-    elif direction > 0:
-        front = 3
-    else:
-        front = 0
+    @property
+    def center(self):
+        return self.rect.center
 
-    head_x, head_y = paddle[front]
-    new_y = head_y + direction 
+    def move(self):
+        self.rect.y += self.direction
+        if self.rect.top < 0: 
+            self.rect.top = 0
+        if self.rect.bottom > HEIGHT: 
+            self.rect.bottom = HEIGHT
+    
+    def draw(self):
+        pygame.draw.rect(screen, WHITE, self.rect)
 
-    if new_y < 0 or new_y > HEIGHT - 1:
-        return  # Don’t move if out of bounds
+class Ball:
+    def __init__(self):
+        self.rect = pygame.Rect(WIDTH // 2 - BLOCK_SIZE // 2, HEIGHT // 2 - BLOCK_SIZE // 2, BLOCK_SIZE, BLOCK_SIZE)
+        self.dx = random.choice([-BALL_SPEED, BALL_SPEED])
+        self.dy = random.choice([-BALL_SPEED, BALL_SPEED])
 
-    new_head = (head_x, new_y)
+    @property
+    def center(self):
+        return self.rect.center
 
-    if direction < 0:
-        paddle.insert(0, new_head)
-        paddle.pop()
-    else:
-        paddle.insert(4, new_head)
-        paddle.pop(0)
+    @property
+    def x(self):
+        return self.rect.x
 
-def cpu_move_paddle(paddle, paddle_direction, ball, ball_direction, reaction_time, ball_dest):
-    """Move CPU paddle to hit ball once it's close enough for CPU to notice"""
-    new_paddle_direction = paddle_direction
-    paddle_y = list()
-    for segment in paddle:
-        paddle_y.append(segment[1])
-    if ball_dest not in paddle_y and ball[0] > reaction_time:
-        if ball_dest < paddle[0][1] and paddle_direction > 0:
-            new_paddle_direction = paddle_direction * -1
-        elif ball_dest > paddle[3][1] and paddle_direction < 0:
-            new_paddle_direction = paddle_direction * -1
-        if ball_direction[0] > 0:
-            move_paddle(paddle, new_paddle_direction)
+    def move(self):
+        self.rect.x += self.dx
+        self.rect.y += self.dy
 
-def check_collision(ball, paddle):
-    """Check if ball hits paddle."""
-    for segment in paddle:
-        if abs(ball[0] - segment[0]) < BLOCK_SIZE and abs(ball[1] - segment[1]) < BLOCK_SIZE:
-            return True
-    return False
+    def bounce(self):
+        self.dy *= -1
 
-def calc_trajectory(ball, paddles, ball_direction):
-    """Calculate the direction ball should move after paddle or wall collision."""
-    if check_collision(ball, paddles[0]):
-        ball_direction = (BALL_SPEED, ball_direction[1])
-    elif check_collision(ball, paddles[1]):
-        ball_direction = (-BALL_SPEED, ball_direction[1])
-    elif ball[1] >= HEIGHT:
-        ball_direction = (ball_direction[0], -BALL_SPEED)
-    elif ball[1] <= 0:
-        ball_direction = (ball_direction[0], BALL_SPEED)
+    def draw(self):
+        pygame.draw.rect(screen, WHITE, self.rect)
 
-    return ball_direction
+class Game:
+    def __init__(self, cpu_difficulty):
+        self.p1 = Paddle(30, 300)
+        self.p2 = Paddle(WIDTH - 60, 300)
+        self.ball = Ball()
+        self.score = [0, 0]
+        self.cpu_difficulty = cpu_difficulty
+        self.cpu_speed = {
+            "EASY": EASY_CPU_SPEED,
+            "MEDIUM": MEDIUM_CPU_SPEED,
+            "HARD": HARD_CPU_SPEED,
+            "None": None
+        }[cpu_difficulty]
+        self.paused = False
+        self.serve_time = time.time() + 1  
 
-def calc_ball_dest(ball, ball_direction):
-    """Calculate where the ball will end up based on its trajectory at the center line."""
-    if ball_direction[1] < 0:
-        ball_y = ball[1] - (8 * BLOCK_SIZE)
-        ball_y *= -1
-    else:
-        ball_y = ball[1] + (8 * BLOCK_SIZE)
+    def draw(self):
+        screen.fill(BLACK)
+        self.p1.draw()
+        self.p2.draw()
+        self.ball.draw()
+        for y in range(0, HEIGHT, 20):
+            pygame.draw.rect(screen, WHITE, (WIDTH // 2 - LINE_WIDTH // 2, y, LINE_WIDTH, 10))
+        font = pygame.font.Font(None, 100)
+        s1 = font.render(str(self.score[0]), True, WHITE)
+        s2 = font.render(str(self.score[1]), True, WHITE)
+        screen.blit(s1, (WIDTH // 4 - s1.get_width() // 2, 75))
+        screen.blit(s2, (WIDTH - WIDTH // 4 - s2.get_width() // 2, 75))
+        pygame.display.flip()
 
-    ball_dest = (((WIDTH // 2) - (2 * BLOCK_SIZE)) // BLOCK_SIZE) * abs(ball_direction[1]) + ball_y
-    if ball_dest > HEIGHT:
-        ball_dest = ball_dest - ((ball_dest - HEIGHT) * 2)
-    elif ball_dest < 0:
-        ball_dest = ball_dest * -1
+    def hit_ball(self, paddle):
+        angle = (self.ball.center_y - paddle.center_y) / (paddle.rect.height / 2)
+        self.ball.dx *= -1
+        self.ball.dy = BALL_SPEED * angle * 2
+        diff = math.hypot(self.ball.dx, self.ball.dy) - math.hypot(BALL_SPEED, BALL_SPEED)
 
-    return ball_dest
-
-def move_ball(ball, ball_direction):
-    """Move the ball and return its new position."""
-    ball_x, ball_y = ball
-    ball_dx, ball_dy = ball_direction
-    return (ball_x + ball_dx, ball_y + ball_dy)
-
-
-def run_game(cpu):
-    """Run one full game."""
-    p1 = [(30, 300), (30, 330), (30, 360), (30, 390)]
-    p2 = [(960, 300), (960, 330), (960, 360), (960, 390)]
-    paddles = [p1, p2]
-    d1 = 0
-    d2 = 0
-    paused = False
-    running = True
-    ball = spawn_ball()
-    ball_direction = (-BALL_SPEED, BALL_SPEED)
-    ball_dest = 0
-    score = [0, 0]
-    draw_game(paddles, ball, score)
-    time.sleep(0.5)
-
-    while running:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    paused = not paused
-                if not paused:
-                    if event.key == pygame.K_w:
-                        d1 = -BLOCK_SIZE
-                    elif event.key == pygame.K_s:
-                        d1 = BLOCK_SIZE
-                    if cpu == "None":
-                        if event.key == pygame.K_UP:
-                            d2 = -BLOCK_SIZE
-                        elif event.key == pygame.K_DOWN:
-                            d2 = BLOCK_SIZE
-            elif event.type == pygame.KEYUP:
-                if event.key in [pygame.K_w, pygame.K_s]:
-                    d1 = 0
-                elif event.key in [pygame.K_UP, pygame.K_DOWN]:
-                    d2 = 0
-
-        # Pause behavior
-        if paused:
-            font = pygame.font.Font(None, 60)
-            screen.fill(BLACK)
-            pause_text = font.render("PAUSED", True, WHITE)
-            screen.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2))
-            pygame.display.flip()
-            continue
-
-        # CPU movement
-        if cpu == "EASY":
-            d2 = BLOCK_SIZE
-            reaction_time = EASY_CPU_REACTION_TIME
-        elif cpu == "MEDIUM":
-            d2 = BLOCK_SIZE
-            reaction_time = MEDIUM_CPU_REACTION_TIME
-        elif cpu == "HARD":
-            d2 = BLOCK_SIZE
-            reaction_time = HARD_CPU_REACTION_TIME
-
-        # Player movement
-        new_ball_direction = calc_trajectory(ball, paddles, ball_direction)
-        ball = move_ball(ball, new_ball_direction)
-        move_paddle(p1, d1)
-
-        if ball[0] == WIDTH // 2 and ball_direction[0] > 0:
-            ball_dest = calc_ball_dest(ball, ball_direction)
-
-        # pygame.draw.rect(screen, RED, (WIDTH - BLOCK_SIZE, ball_dest, BLOCK_SIZE, BLOCK_SIZE))
-        # pygame.display.flip()
-        
-        if cpu == "None":
-            move_paddle(p2, d2)
+        if self.ball.dx > 0:
+            self.ball.dx = self.ball.dx - diff
         else:
-            cpu_move_paddle(p2, d2, ball, new_ball_direction, reaction_time, ball_dest)
+            self.ball.dx = self.ball.dx + diff
 
-        # Increment score and spawn new ball
-        if ball[0] > WIDTH:
-            score[0] += 1
-            time.sleep(0.5)
-            ball = spawn_ball()
-        elif ball[0] < -BLOCK_SIZE:
-            score[1] += 1
-            time.sleep(0.5)
-            ball = spawn_ball()
+        if abs(self.ball.dx) < BALL_SPEED / 4:
+            if self.ball.dx > 0:
+                self.ball.dx = BALL_SPEED
+            else:
+                self.ball.dx = -BALL_SPEED
+            new_dy = math.sqrt((math.hypot(BALL_SPEED, BALL_SPEED) ** 2) - ((BALL_SPEED / 4) ** 2))
+            if self.ball.dy < 0:
+                self.ball.dy = -new_dy
+            else:
+                self.ball.dy = new_dy
 
-        # Draw game
-        draw_game(paddles, ball, score)
+        if self.ball.dx > 0:
+            self.ball.rect.left = paddle.rect.right + 1
+        else:
+            self.ball.rect.right = paddle.rect.left - 1
+        
+    def update(self):
+        if time.time() < self.serve_time:  
+            return
 
-        if score[0] > 10 or score[1] > 10:
-            running = False
-            return score
-            
-        ball_direction = new_ball_direction
+        self.ball.move()
+        self.p1.move()
+        self.p2.move()
 
-def draw_game(paddles, ball, score):
-    """TODO"""
-    screen.fill(BLACK)
+        # Ball wall bounce
+        if self.ball.rect.top <= 0 or self.ball.rect.bottom >= HEIGHT:
+            self.ball.bounce()
 
-    # Draw each paddle segment as a block
-    for paddle in paddles:
-        for segment in paddle:
-            pygame.draw.rect(screen, WHITE, (*segment, BLOCK_SIZE, BLOCK_SIZE))
+        # Paddle hits ball
+        if self.ball.rect.colliderect(self.p1.rect):
+            self.hit_ball(self.p1)
+        elif self.ball.rect.colliderect(self.p2.rect):
+            self.hit_ball(self.p2)
 
-    pygame.draw.rect(screen, WHITE, (*ball, BLOCK_SIZE, BLOCK_SIZE))
+        # Scoring
+        if self.ball.rect.left > WIDTH:
+            self.score[0] += 1
+            self.ball = Ball()
+            self.serve_time = time.time() + 1
+        elif self.ball.rect.right < 0:
+            self.score[1] += 1
+            self.ball = Ball()
+            self.serve_time = time.time() + 1
 
-    # Draw dashed center line
-    dash_height = 10
-    gap = 10
-    x = WIDTH // 2 - LINE_WIDTH // 2
+    def cpu_control(self):
+        if self.cpu_difficulty != "None" and self.ball.dx > 0 and self.ball.x > CPU_REACTION_TIME:
+            target_y = self.ball.center
+            dist = target_y - self.p2.center
+            if abs(dist) > self.cpu_speed:
+                dist = self.cpu_speed if dist > 0 else -self.cpu_speed
+            self.p2.rect.y += dist
 
-    for y in range(0, HEIGHT, dash_height + gap):
-        pygame.draw.rect(screen, WHITE, (x, y, LINE_WIDTH, dash_height))
+    def run(self):
+        while True:
+            clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit(); sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_SPACE:
+                        self.paused = not self.paused
+                    if not self.paused:
+                        if event.key == pygame.K_w:
+                            self.p1.direction = -self.p1.speed
+                        elif event.key == pygame.K_s:
+                            self.p1.direction = self.p1.speed
+                        if self.cpu_difficulty == "None":
+                            if event.key == pygame.K_UP:
+                                self.p2.direction = -self.p2.speed
+                            elif event.key == pygame.K_DOWN:
+                                self.p2.direction = self.p2.speed
+                elif event.type == pygame.KEYUP:
+                    if event.key in [pygame.K_w, pygame.K_s]:
+                        self.p1.direction = 0
+                    elif event.key in [pygame.K_UP, pygame.K_DOWN]:
+                        self.p2.direction = 0
 
-    # Draw score
-    font = pygame.font.Font(None, 100)
-    score_1 = font.render(f"{score[0]}", True, WHITE)
-    score_2 = font.render(f"{score[1]}", True, WHITE)
-    screen.blit(score_1, (WIDTH // 4 - score_1.get_width() // 2, 75))
-    screen.blit(score_2, (WIDTH - WIDTH // 4 - score_2.get_width() // 2, 75))
+            if not self.paused:
+                if self.cpu_difficulty != "None":
+                    self.cpu_control()
+                self.update()
+                self.draw()
 
-    pygame.display.flip()
+            if max(self.score) > 10:
+                return self.score
 
-# MAIN LOOP
+# ---- MAIN LOOP ----
 def main():
-    """Main driver function."""
     while True:
         mode = start_menu()
         if mode == "1 Player":
             cpu = one_player_menu()
             if cpu == "BACK":
                 continue
-        elif mode == "2 Player":
+        else:
             cpu = "None"
 
         playing = True
         while playing:
-            score = run_game(cpu)
-            if score[0] > score[1]:
-                winner = 1
-            else:
-                winner = 2
+            score = Game(cpu).run()
+            winner = 1 if score[0] > score[1] else 2
             playing = end_game(winner, score)
 
 if __name__ == "__main__":
     main()
-    
