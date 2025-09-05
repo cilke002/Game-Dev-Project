@@ -19,6 +19,8 @@ CPU_REACTION_TIME = WIDTH - 400
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+LIGHT_BLUE = (0, 200, 255)
+
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -87,6 +89,31 @@ def one_player_menu():
                 elif back_box.collidepoint(event.pos): 
                     return "BACK"
 
+def color_select():
+    font = pygame.font.Font(None, 50)
+    select_text = font.render("SELECT BACKGROUND COLOR", True, WHITE)
+    black_text = font.render("BLACK", True, WHITE)
+    blue_text = font.render("BLUE", True, LIGHT_BLUE)
+
+    black_box = black_text.get_rect(center=(WIDTH // 2, 400))
+    blue_box = blue_text.get_rect(center=(WIDTH // 2, 450))
+
+    while True:
+        screen.fill(BLACK)
+        screen.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, 300))
+        screen.blit(black_text, black_box.topleft)
+        screen.blit(blue_text, blue_box.topleft)
+        pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if black_box.collidepoint(event.pos): 
+                    return BLACK
+                elif blue_box.collidepoint(event.pos): 
+                    return LIGHT_BLUE
+
 def end_game(winner, score):
     font = pygame.font.Font(None, 50)
     winner_text = font.render(f"PLAYER {winner} WINS", True, WHITE)
@@ -125,7 +152,7 @@ class Paddle:
 
     @property
     def center(self):
-        return self.rect.center
+        return self.rect.centery
 
     def move(self):
         self.rect.y += self.direction
@@ -138,14 +165,14 @@ class Paddle:
         pygame.draw.rect(screen, WHITE, self.rect)
 
 class Ball:
-    def __init__(self):
+    def __init__(self, player_scored):
         self.rect = pygame.Rect(WIDTH // 2 - BLOCK_SIZE // 2, HEIGHT // 2 - BLOCK_SIZE // 2, BLOCK_SIZE, BLOCK_SIZE)
-        self.dx = random.choice([-BALL_SPEED, BALL_SPEED])
+        self.dx = BALL_SPEED if player_scored == 0 else -BALL_SPEED
         self.dy = random.choice([-BALL_SPEED, BALL_SPEED])
 
     @property
     def center(self):
-        return self.rect.center
+        return self.rect.centery
 
     @property
     def x(self):
@@ -165,7 +192,7 @@ class Game:
     def __init__(self, cpu_difficulty):
         self.p1 = Paddle(30, 300)
         self.p2 = Paddle(WIDTH - 60, 300)
-        self.ball = Ball()
+        self.ball = Ball(1)
         self.score = [0, 0]
         self.cpu_difficulty = cpu_difficulty
         self.cpu_speed = {
@@ -177,8 +204,8 @@ class Game:
         self.paused = False
         self.serve_time = time.time() + 1  
 
-    def draw(self):
-        screen.fill(BLACK)
+    def draw(self, bg_color):
+        screen.fill(bg_color)
         self.p1.draw()
         self.p2.draw()
         self.ball.draw()
@@ -192,7 +219,7 @@ class Game:
         pygame.display.flip()
 
     def hit_ball(self, paddle):
-        angle = (self.ball.center_y - paddle.center_y) / (paddle.rect.height / 2)
+        angle = (self.ball.center - paddle.center) / (paddle.rect.height / 2)
         self.ball.dx *= -1
         self.ball.dy = BALL_SPEED * angle * 2
         diff = math.hypot(self.ball.dx, self.ball.dy) - math.hypot(BALL_SPEED, BALL_SPEED)
@@ -239,11 +266,11 @@ class Game:
         # Scoring
         if self.ball.rect.left > WIDTH:
             self.score[0] += 1
-            self.ball = Ball()
+            self.ball = Ball(0)
             self.serve_time = time.time() + 1
         elif self.ball.rect.right < 0:
             self.score[1] += 1
-            self.ball = Ball()
+            self.ball = Ball(1)
             self.serve_time = time.time() + 1
 
     def cpu_control(self):
@@ -254,7 +281,7 @@ class Game:
                 dist = self.cpu_speed if dist > 0 else -self.cpu_speed
             self.p2.rect.y += dist
 
-    def run(self):
+    def run(self, bg_color):
         while True:
             clock.tick(FPS)
             for event in pygame.event.get():
@@ -283,7 +310,7 @@ class Game:
                 if self.cpu_difficulty != "None":
                     self.cpu_control()
                 self.update()
-                self.draw()
+                self.draw(bg_color)
 
             if max(self.score) > 10:
                 return self.score
@@ -298,10 +325,10 @@ def main():
                 continue
         else:
             cpu = "None"
-
+        bg_color = color_select()
         playing = True
         while playing:
-            score = Game(cpu).run()
+            score = Game(cpu).run(bg_color)
             winner = 1 if score[0] > score[1] else 2
             playing = end_game(winner, score)
 

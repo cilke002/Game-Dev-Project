@@ -117,7 +117,7 @@ def check_collision(snake):
         return True
     return False
 
-def draw_game(snake, food_positions, color):
+def draw_game(snake, food_position, color):
     """Draws the snake, food, and background."""
     if color == 1:
         screen.fill(WHITE)
@@ -129,8 +129,8 @@ def draw_game(snake, food_positions, color):
         else:
             color = GREEN
         pygame.draw.rect(screen, color, (*segment, BLOCK_SIZE, BLOCK_SIZE))
-    for food in food_positions:
-        pygame.draw.rect(screen, RED, (*food, BLOCK_SIZE, BLOCK_SIZE))
+    
+    pygame.draw.rect(screen, RED, (*food_position, BLOCK_SIZE, BLOCK_SIZE))
     pygame.display.flip()
 
 def run_game(difficulty, high_score):
@@ -146,7 +146,7 @@ def run_game(difficulty, high_score):
     # Initialize game state
     snake = [(180, 90), (150, 90), (120, 90)]
     direction = (BLOCK_SIZE, 0)
-    food_positions = set([spawn_food(snake)])
+    food_position = spawn_food(snake)
     score = 0
     color = 0
     paused = False
@@ -156,7 +156,6 @@ def run_game(difficulty, high_score):
     running = True
     while running:
         clock.tick(FPS)
-        food_positions.add(spawn_food(snake))
         # Handle events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -195,22 +194,21 @@ def run_game(difficulty, high_score):
             continue
 
         # Eat food or move normally
-        if new_head in food_positions:
-            food_positions.remove(new_head)
-            food_positions.add(spawn_food(snake))
+        if new_head == food_position:
+            food_position = spawn_food(snake)
             score += 1
             pygame.display.set_caption(f"Snake Game  |  Difficulty: {difficulty}  |  Press SPACE to Pause  |  Score: {score}")
         else:
             snake.pop()
 
         # Draw everything
-        draw_game(snake, food_positions, color)
+        draw_game(snake, food_position, color)
 
     return score
 
 # MAIN LOOP
 def main():
-    """Main driver function."""
+    """Main Driver Function"""
     difficulty = start_menu()
     high_score = 0
     playing = True
