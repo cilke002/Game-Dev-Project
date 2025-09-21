@@ -17,11 +17,15 @@ HARD_CPU_SPEED = 14
 
 CPU_REACTION_TIME = WIDTH - 400
 
+# ---- COLORS ----
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 LIGHT_BLUE = (0, 200, 255)
+DARK_BLUE = (0, 0, 75)
+LIGHT_GREEN = (0, 200, 0)
+DARK_GREEN = (0, 75, 0)
 
-
+# Initialize game
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
@@ -91,18 +95,27 @@ def one_player_menu():
 
 def color_select():
     font = pygame.font.Font(None, 50)
-    select_text = font.render("SELECT BACKGROUND COLOR", True, WHITE)
+    select_text = font.render("BACKGROUND", True, WHITE)
     black_text = font.render("BLACK", True, WHITE)
-    blue_text = font.render("BLUE", True, LIGHT_BLUE)
+    light_blue_text = font.render("BLUE", True, LIGHT_BLUE)
+    dark_blue_text = font.render("BLUE", True, DARK_BLUE)
+    light_green_text = font.render("LIGHT GREEN", True, LIGHT_GREEN)
+    dark_green_text = font.render("DARK GREEN", True, DARK_GREEN)
 
     black_box = black_text.get_rect(center=(WIDTH // 2, 400))
-    blue_box = blue_text.get_rect(center=(WIDTH // 2, 450))
+    light_blue_box = light_blue_text.get_rect(center=(WIDTH // 2, 450))
+    dark_blue_box = dark_blue_text.get_rect(center=(WIDTH // 2, 500))
+    light_green_box = light_green_text.get_rect(center=(WIDTH // 2, 550))
+    dark_green_box = dark_green_text.get_rect(center=(WIDTH // 2, 600))
 
     while True:
         screen.fill(BLACK)
         screen.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, 300))
         screen.blit(black_text, black_box.topleft)
-        screen.blit(blue_text, blue_box.topleft)
+        screen.blit(light_blue_text, light_blue_box.topleft)
+        screen.blit(dark_blue_text, dark_blue_box.topleft)
+        screen.blit(light_green_text, light_green_box.topleft)
+        screen.blit(dark_green_text, dark_green_box.topleft)
         pygame.display.flip()
 
         for event in pygame.event.get():
@@ -111,8 +124,14 @@ def color_select():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if black_box.collidepoint(event.pos): 
                     return BLACK
-                elif blue_box.collidepoint(event.pos): 
+                elif light_blue_box.collidepoint(event.pos): 
                     return LIGHT_BLUE
+                elif dark_blue_box.collidepoint(event.pos): 
+                    return DARK_BLUE
+                elif light_green_box.collidepoint(event.pos):
+                    return LIGHT_GREEN
+                elif dark_green_box.collidepoint(event.pos):
+                    return DARK_GREEN
 
 def end_game(winner, score):
     font = pygame.font.Font(None, 50)
@@ -231,9 +250,9 @@ class Game:
 
         if abs(self.ball.dx) < BALL_SPEED / 4:
             if self.ball.dx > 0:
-                self.ball.dx = BALL_SPEED
+                self.ball.dx = BALL_SPEED / 4
             else:
-                self.ball.dx = -BALL_SPEED
+                self.ball.dx = -BALL_SPEED / 4
             new_dy = math.sqrt((math.hypot(BALL_SPEED, BALL_SPEED) ** 2) - ((BALL_SPEED / 4) ** 2))
             if self.ball.dy < 0:
                 self.ball.dy = -new_dy
