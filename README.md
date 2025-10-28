@@ -1,2 +1,2 @@
 # Game-Dev-Project
-TODO
+This repo includes 2D game remakes of Snake and Pong
