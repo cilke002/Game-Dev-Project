@@ -24,142 +24,284 @@ LIGHT_BLUE = (0, 200, 255)
 DARK_BLUE = (0, 0, 75)
 LIGHT_GREEN = (0, 200, 0)
 DARK_GREEN = (0, 75, 0)
+MENU_BG = (18, 20, 28)
+BUTTON = (55, 55, 70)
+BUTTON_HOVER = (95, 95, 125)
+YELLOW = (255, 215, 0)
 
 # Initialize game
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 
+# ---- HELPER FUNCTIONS ----
+def draw_button(rect, text, font):
+    mouse = pygame.mouse.get_pos()
+
+    hover = rect.collidepoint(mouse)
+
+    color = BUTTON_HOVER if hover else BUTTON
+
+    pygame.draw.rect(screen, color, rect, border_radius=10)
+    pygame.draw.rect(screen, WHITE, rect, 2, border_radius=10)
+
+    label = font.render(text, True, WHITE)
+    label_rect = label.get_rect(center=rect.center)
+
+    screen.blit(label, label_rect)
+
+
+def draw_title(title):
+    title_font = pygame.font.Font(None, 90)
+
+    y = 90 + math.sin(time.time()*2)*5
+
+    text = title_font.render(title, True, WHITE)
+
+    screen.blit(text, (WIDTH//2-text.get_width()//2, y))
+
+
+def draw_subtitle(text):
+
+    font = pygame.font.Font(None, 42)
+
+    label = font.render(text, True, (210,210,210))
+
+    screen.blit(label,(WIDTH//2-label.get_width()//2,185))
+
 # ---- MENUS ----
 def start_menu():
-    font = pygame.font.Font(None, 50)
-    title_text = font.render("PONG", True, WHITE)
-    select_text = font.render("Select Mode", True, WHITE)
-    one_player_text = font.render("1 Player", True, WHITE)
-    two_player_text = font.render("2 Player", True, WHITE)
 
-    one_player = one_player_text.get_rect(center=(WIDTH // 2, 400))
-    two_player = two_player_text.get_rect(center=(WIDTH // 2, 450))
+    button_font = pygame.font.Font(None, 42)
+
+    one_rect = pygame.Rect(0,0,260,55)
+    two_rect = pygame.Rect(0,0,260,55)
+
+    one_rect.center=(WIDTH//2,360)
+    two_rect.center=(WIDTH//2,440)
 
     while True:
-        screen.fill(BLACK)
-        screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 8))
-        screen.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, HEIGHT // 2 - 60))
-        screen.blit(one_player_text, one_player.topleft)
-        screen.blit(two_player_text, two_player.topleft)
+
+        screen.fill(MENU_BG)
+
+        draw_title("PONG")
+
+        draw_subtitle("Select Game Mode")
+
+        draw_button(one_rect,"1 PLAYER",button_font)
+        draw_button(two_rect,"2 PLAYER",button_font)
+
         pygame.display.flip()
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if one_player.collidepoint(event.pos): 
+                pygame.quit()
+                sys.exit()
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+
+                if one_rect.collidepoint(event.pos):
                     return "1 Player"
-                elif two_player.collidepoint(event.pos): 
+
+                if two_rect.collidepoint(event.pos):
                     return "2 Player"
 
 def one_player_menu():
-    font = pygame.font.Font(None, 50)
-    select_text = font.render("Select Difficulty", True, WHITE)
-    easy_text = font.render("EASY", True, WHITE)
-    medium_text = font.render("MEDIUM", True, WHITE)
-    hard_text = font.render("HARD", True, WHITE)
-    back_text = font.render("BACK", True, WHITE)
 
-    easy_mode = easy_text.get_rect(center=(WIDTH // 2, 400))
-    medium_mode = medium_text.get_rect(center=(WIDTH // 2, 450))
-    hard_mode = hard_text.get_rect(center=(WIDTH // 2, 500))
-    back_box = back_text.get_rect(center=(WIDTH // 8, 675))
+    button_font = pygame.font.Font(None,40)
+
+    easy=pygame.Rect(0,0,260,55)
+    medium=pygame.Rect(0,0,260,55)
+    hard=pygame.Rect(0,0,260,55)
+
+    easy.center=(WIDTH//2,340)
+    medium.center=(WIDTH//2,420)
+    hard.center=(WIDTH//2,500)
+
+    back=pygame.Rect(20,HEIGHT-60,120,40)
 
     while True:
-        screen.fill(BLACK)
-        screen.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, HEIGHT // 2 - 60))
-        screen.blit(easy_text, easy_mode.topleft)
-        screen.blit(medium_text, medium_mode.topleft)
-        screen.blit(hard_text, hard_mode.topleft)
-        screen.blit(back_text, back_box.topleft)
+
+        screen.fill(MENU_BG)
+
+        draw_title("PONG")
+
+        draw_subtitle("Select Difficulty")
+
+        draw_button(easy,"EASY",button_font)
+        draw_button(medium,"MEDIUM",button_font)
+        draw_button(hard,"HARD",button_font)
+
+        pygame.draw.rect(screen,BUTTON,back,border_radius=8)
+        pygame.draw.rect(screen,WHITE,back,2,border_radius=8)
+
+        back_label=pygame.font.Font(None,32).render("BACK",True,WHITE)
+        screen.blit(back_label,back_label.get_rect(center=back.center))
+
         pygame.display.flip()
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if easy_mode.collidepoint(event.pos): 
+
+            if event.type==pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+            if event.type==pygame.MOUSEBUTTONDOWN:
+
+                if easy.collidepoint(event.pos):
                     return "EASY"
-                elif medium_mode.collidepoint(event.pos): 
+
+                if medium.collidepoint(event.pos):
                     return "MEDIUM"
-                elif hard_mode.collidepoint(event.pos): 
+
+                if hard.collidepoint(event.pos):
                     return "HARD"
-                elif back_box.collidepoint(event.pos): 
+
+                if back.collidepoint(event.pos):
                     return "BACK"
 
 def color_select():
-    font = pygame.font.Font(None, 50)
-    select_text = font.render("BACKGROUND", True, WHITE)
-    black_text = font.render("BLACK", True, WHITE)
-    light_blue_text = font.render("BLUE", True, LIGHT_BLUE)
-    dark_blue_text = font.render("BLUE", True, DARK_BLUE)
-    light_green_text = font.render("LIGHT GREEN", True, LIGHT_GREEN)
-    dark_green_text = font.render("DARK GREEN", True, DARK_GREEN)
 
-    black_box = black_text.get_rect(center=(WIDTH // 2, 400))
-    light_blue_box = light_blue_text.get_rect(center=(WIDTH // 2, 450))
-    dark_blue_box = dark_blue_text.get_rect(center=(WIDTH // 2, 500))
-    light_green_box = light_green_text.get_rect(center=(WIDTH // 2, 550))
-    dark_green_box = dark_green_text.get_rect(center=(WIDTH // 2, 600))
+    button_font = pygame.font.Font(None, 40)
+
+    color_options = [
+        ("BLACK", BLACK),
+        ("LIGHT BLUE", LIGHT_BLUE),
+        ("DARK BLUE", DARK_BLUE),
+        ("LIGHT GREEN", LIGHT_GREEN),
+        ("DARK GREEN", DARK_GREEN)
+    ]
+
+    buttons = []
+
+    start_y = 300
+    spacing = 75
+
+    for i in range(len(color_options)):
+        rect = pygame.Rect(0, 0, 320, 55)
+        rect.center = (WIDTH // 2, start_y + i * spacing)
+        buttons.append(rect)
 
     while True:
-        screen.fill(BLACK)
-        screen.blit(select_text, (WIDTH // 2 - select_text.get_width() // 2, 300))
-        screen.blit(black_text, black_box.topleft)
-        screen.blit(light_blue_text, light_blue_box.topleft)
-        screen.blit(dark_blue_text, dark_blue_box.topleft)
-        screen.blit(light_green_text, light_green_box.topleft)
-        screen.blit(dark_green_text, dark_green_box.topleft)
+
+        screen.fill(MENU_BG)
+
+        draw_title("PONG")
+        draw_subtitle("Select Background")
+
+        mouse = pygame.mouse.get_pos()
+
+        for i, (name, color) in enumerate(color_options):
+
+            hover = buttons[i].collidepoint(mouse)
+
+            fill = BUTTON_HOVER if hover else BUTTON
+
+            pygame.draw.rect(screen, fill, buttons[i], border_radius=10)
+            pygame.draw.rect(screen, WHITE, buttons[i], 2, border_radius=10)
+
+            # Color preview square
+            pygame.draw.rect(
+                screen,
+                color,
+                (buttons[i].left + 15, buttons[i].centery - 12, 24, 24)
+            )
+
+            pygame.draw.rect(
+                screen,
+                WHITE,
+                (buttons[i].left + 15, buttons[i].centery - 12, 24, 24),
+                2
+            )
+
+            label = button_font.render(name, True, WHITE)
+            label_rect = label.get_rect(center=buttons[i].center)
+
+            screen.blit(label, label_rect)
+
         pygame.display.flip()
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
+                pygame.quit()
+                sys.exit()
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if black_box.collidepoint(event.pos): 
-                    return BLACK
-                elif light_blue_box.collidepoint(event.pos): 
-                    return LIGHT_BLUE
-                elif dark_blue_box.collidepoint(event.pos): 
-                    return DARK_BLUE
-                elif light_green_box.collidepoint(event.pos):
-                    return LIGHT_GREEN
-                elif dark_green_box.collidepoint(event.pos):
-                    return DARK_GREEN
+
+                for i, (_, color) in enumerate(color_options):
+
+                    if buttons[i].collidepoint(event.pos):
+                        return color
 
 def end_game(winner, score):
-    font = pygame.font.Font(None, 50)
-    winner_text = font.render(f"PLAYER {winner} WINS", True, WHITE)
-    score_text = font.render(f"{score[0]} - {score[1]}", True, WHITE)
-    continue_text = font.render("Rematch?", True, WHITE)
-    yes_text = font.render("YES", True, WHITE)
-    no_text = font.render("NO", True, WHITE)
 
-    yes_box = yes_text.get_rect(center=(WIDTH // 2 - 50, 550))
-    no_box = no_text.get_rect(center=(WIDTH // 2 + 50, 550))
+    button_font = pygame.font.Font(None, 40)
+    winner_font = pygame.font.Font(None, 55)
+    score_font = pygame.font.Font(None, 50)
+
+    rematch_rect = pygame.Rect(0, 0, 220, 55)
+    quit_rect = pygame.Rect(0, 0, 220, 55)
+
+    rematch_rect.center = (WIDTH // 2, 530)
+    quit_rect.center = (WIDTH // 2, 610)
 
     while True:
-        screen.fill(BLACK)
-        screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 3))
-        screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 3 + 50))
-        screen.blit(continue_text, (WIDTH // 2 - continue_text.get_width() // 2, HEIGHT // 2 + 100))
-        screen.blit(yes_text, yes_box.topleft)
-        screen.blit(no_text, no_box.topleft)
+
+        screen.fill(MENU_BG)
+
+        # Animated title
+        draw_title("GAME OVER")
+
+        # Winner
+        winner_text = winner_font.render(
+            f"PLAYER {winner} WINS!",
+            True,
+            WHITE
+        )
+
+        winner_rect = winner_text.get_rect(center=(WIDTH // 2, 200))
+        screen.blit(winner_text, winner_rect)
+
+        # Final Score
+        score_text = score_font.render(
+            f"{score[0]} - {score[1]}",
+            True,
+            WHITE
+        )
+
+        score_rect = score_text.get_rect(center=(WIDTH // 2, 260))
+        screen.blit(score_text, score_rect)
+
+        # Play Again
+        play_again = pygame.font.Font(None, 42).render(
+            "Play Again?",
+            True,
+            WHITE
+        )
+
+        play_rect = play_again.get_rect(center=(WIDTH // 2, 365))
+        screen.blit(play_again, play_rect)
+
+        # Buttons
+        draw_button(rematch_rect, "REMATCH", button_font)
+        draw_button(quit_rect, "QUIT", button_font)
+
         pygame.display.flip()
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
-                pygame.quit(); sys.exit()
+                pygame.quit()
+                sys.exit()
+
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                if yes_box.collidepoint(event.pos): 
+
+                if rematch_rect.collidepoint(event.pos):
                     return True
-                elif no_box.collidepoint(event.pos): 
+
+                elif quit_rect.collidepoint(event.pos):
                     return False
 
 # ---- CLASSES ----
@@ -330,6 +472,12 @@ class Game:
                     self.cpu_control()
                 self.update()
                 self.draw(bg_color)
+            else:
+                font = pygame.font.Font(None, 60)
+                pause_text = font.render("PAUSED", True, BLACK)
+                screen.blit(pause_text, (WIDTH // 2 - pause_text.get_width() // 2, HEIGHT // 2))
+                pygame.display.flip()
+                continue
 
             if max(self.score) > 10:
                 return self.score
